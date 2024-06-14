@@ -11,32 +11,36 @@ start_time = time.time()
 
 
 
-trees = 100
+trees = 1
 size = 200
 
 for i in range(trees):
-    print("==============================================")
-    print(f"TREE {i}:")
-    print("----------------------------------------------")
+    # print("==============================================")
+    # print(f"TREE {i}:")
+    # print("----------------------------------------------")
     
     my_values = range(size)
     my_values = random.sample(my_values, k=size)
 
     a = AVLTree.AVLTree(values=my_values)
     
-    # a.print()
-    # a.generate_plot(show=(trees == 1))
-
-    # print("==============================================")
-    # print(f"TREE {i} after deleting node 50:")
-    # print("----------------------------------------------")
+    #a.print()
+    a.generate_plot(show=(trees == 1))
+    ancestors = a.list_ancestors(a.search(50))
     
-    # a.delete(50)
-    # a.print()
-    # a.generate_plot(show=(trees == 1))
+    for node in ancestors:
+        print(node.value)
 
-print(time.time() - start_time)
+#     print("==============================================")
+#     print(f"TREE {i} after deleting node 50:")
+#     print("----------------------------------------------")
+    
+#     a.delete(50)
+#     a.print()
+#     a.generate_plot(show=(trees == 1))
 
+# print(time.time() - start_time)
+# print("==============================================")
 
 
 

@@ -71,6 +71,15 @@ class AVLTree:
         
         return L
 
+    # returns a list of every ancestor of a given node, ordered in increasing height
+    def list_ancestors(self, node):
+        nodes = [node]
+
+        while nodes[-1].parent != None:
+            nodes.append(nodes[-1].parent)
+
+        return nodes
+
     # generates a pdf file containing a plot of the tree, via the graphviz package
     def generate_plot(self, show=False):
         current_time = time.time()
@@ -285,12 +294,22 @@ class AVLTree:
         
     # search the tree for a given value
     def search(self, value):
-        return self.search_subtree(self, self.root, value)
+        return self.search_subtree(self.root, value)
     
     # search a subtree for a given value
     def search_subtree(self, node, value):
-        # TODO: search tree
-        return None
+
+        if node == None:
+            return None
+        
+        comparison = self.comparison_fn(value) - self.comparison_fn(node.value)
+
+        if comparison < 0:
+            return self.search_subtree(node.left_child, value)
+        elif comparison > 0:
+            return self.search_subtree(node.right_child, value)
+        
+        return node
     
     # find the minimal (inorder) node for the entire tree
     def min(self):
