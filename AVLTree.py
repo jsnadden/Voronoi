@@ -12,10 +12,9 @@ class Node:
 
 
 class AVLTree:
-
     def __init__(self, value = None, values=[], comparison_fn=lambda x : x):
 
-        # the comparison_fn needs to be injective in order for this data structure to function as expected
+        # the comparison_fn needs to be injective, so that the inorder is well-defined
         self.comparison_fn = comparison_fn
 
         self.root = None
@@ -31,15 +30,17 @@ class AVLTree:
         
         self.validate()
     
+    # get the height of a given node (even if None)
     def get_height(self, node):
         if node == None:
             return -1
         return node.height
 
+    # get the balance value at a given node (even if None)
     def balance_at(self, node):
         return self.get_height(node.left_child) - self.get_height(node.right_child)
 
-    # make sure this is indeed a balanced binary search tree
+    # make sure this indeed satisfies the conditions of a balanced binary search tree
     def validate(self):
         # TODO: this is very brute-force, refactor with some elegant recursion
         nodes = self.list_tree()
@@ -50,16 +51,16 @@ class AVLTree:
             assert node.height == 1 + max(self.get_height(node.left_child), self.get_height(node.right_child))
             
             if node.right_child != None:
-                assert node.value < self.subtree_min(node.right_child).value
+                assert self.comparison_fn(node.value) < self.comparison_fn(self.subtree_min(node.right_child).value)
             
             if node.left_child != None:
-                assert node.value > self.subtree_max(node.left_child).value
+                assert self.comparison_fn(node.value) > self.comparison_fn(self.subtree_max(node.left_child).value)
              
-    # returns an ordered list of every node in the tree
+    # returns an inordered list of every node in the tree
     def list_tree(self):
         return self.list_subtree(self.root)
 
-    # returns an ordered list of every node in the subtree starting at a specified node
+    # returns an inordered list of every node in the subtree starting at a specified node
     def list_subtree(self, node):
         L = []
 
@@ -105,12 +106,11 @@ class AVLTree:
             else:
                 print("Node", l.value, "is the root, at height", l.height)
 
-    # insert a given value into the tree (if it isn't already present), while maintaining order and balance.
-    # (requires injectivity of comparison_fn to behave in the expected manner)
+    # insert a given value into the tree (if it isn't already present), while maintaining order and balance
     def insert(self, value):
         self.root = self.__insert_at(value, self.root)
 
-    # private insertion method to run recursively
+    # private insertion method to do internal recursive calls
     def __insert_at(self, value, node):
 
         # initialise root, if necessary
@@ -172,19 +172,21 @@ class AVLTree:
         
         return node
         
+    # delete a node containing a specified value, if it is present, while maintaining order and balance
     def delete(self, value):
         self.root = self.__delete_at(value, self.root)
-
+    
+    # private deletion method to do internal recursive calls
     def __delete_at(self, value, node):
         
         if node == None:
             return node
         
         # if the current node is not the one to be deleted, pass the call down the chain
-        if value < node.value:
+        if self.comparison_fn(value) < self.comparison_fn(node.value):
             node.left_child = self.__delete_at(value, node.left_child)
 
-        elif value > node.value:
+        elif self.comparison_fn(value) > self.comparison_fn(node.value):
             node.right_child = self.__delete_at(value, node.right_child)
 
         else:   # kill the node, and deal with its orphans
@@ -239,6 +241,7 @@ class AVLTree:
 
         return node
 
+    # perform a right tree rotation at the given node
     def right_rotation(self, node):
 
         # this will only be called if x exists
@@ -259,6 +262,7 @@ class AVLTree:
         
         return x
     
+    # perform a left tree rotation at the given node
     def left_rotation(self, node):
 
         # this will only be called if x exists
@@ -279,16 +283,20 @@ class AVLTree:
         
         return x
         
+    # search the tree for a given value
     def search(self, value):
         return self.search_subtree(self, self.root, value)
     
+    # search a subtree for a given value
     def search_subtree(self, node, value):
         # TODO: search tree
         return None
     
+    # find the minimal (inorder) node for the entire tree
     def min(self):
         return self.subtree_min(self.root)
     
+    # find the successor to a given node
     def successor(self, node):
 
         if node.right_child != None:
@@ -303,6 +311,7 @@ class AVLTree:
         
         return node
       
+    # find the minimal (inorder) node for a subtree
     def subtree_min(self, node):
         current_node = node
 
@@ -311,12 +320,15 @@ class AVLTree:
         
         return current_node
     
+    # find the maximal (inorder) node for the entire tree
     def max(self):
         return self.subtree_max(self.root)
     
+    # find the predecessor to a given node
     def predecessor(self, node):
         return # TODO
     
+    # find the maximal (inorder) node for a subtree
     def subtree_max(self, node):
         current_node = node
 
