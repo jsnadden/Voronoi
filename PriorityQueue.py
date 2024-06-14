@@ -7,10 +7,10 @@ class PriorityQueue:
             self.queue.sort(key=sort_fn)
     
     def is_empty(self):
-        return len(self) == 0
+        return len(self.queue) == 0
 
-    def max(self):
+    def pop(self):
         return self.queue.pop()
     
-    def insert(self, element, priority):
+    def insert(self, element, priority=0):
         self.queue.insert(priority, element)

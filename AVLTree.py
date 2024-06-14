@@ -11,7 +11,6 @@ class Node:
         self.height = 0
 
 
-# my implementation of an AVL (self-balanced binary search) tree data structure
 class AVLTree:
 
     def __init__(self, value = None, values=[], comparison_fn=lambda x : x):
@@ -29,15 +28,33 @@ class AVLTree:
         
         for x in values:
             self.insert(x)
+        
+        self.validate()
     
     def get_height(self, node):
         if node == None:
-            return 0
+            return -1
         return node.height
 
     def balance_at(self, node):
         return self.get_height(node.left_child) - self.get_height(node.right_child)
 
+    # make sure this is indeed a balanced binary search tree
+    def validate(self):
+        # TODO: this is very brute-force, refactor with some elegant recursion
+        nodes = self.list_tree()
+
+        for node in nodes:
+            assert abs(self.balance_at(node)) <= 1
+            
+            assert node.height == 1 + max(self.get_height(node.left_child), self.get_height(node.right_child))
+            
+            if node.right_child != None:
+                assert node.value < self.subtree_min(node.right_child).value
+            
+            if node.left_child != None:
+                assert node.value > self.subtree_max(node.left_child).value
+             
     # returns an ordered list of every node in the tree
     def list_tree(self):
         return self.list_subtree(self.root)
@@ -53,10 +70,11 @@ class AVLTree:
         
         return L
 
+    # generates a pdf file containing a plot of the tree, via the graphviz package
     def generate_plot(self, show=False):
         current_time = time.time()
         nodes = self.list_tree()
-        dot = graphviz.Digraph(comment=f"AVL tree {current_time}")
+        dot = graphviz.Digraph()
 
         for node in nodes:
             dot.node(f"{node.value}")
@@ -68,7 +86,7 @@ class AVLTree:
                 dot.edge(f"{node.value}",f"{node.right_child.value}")
         
         file_path = f"graphviz_outputs/avl_tree_{current_time}"
-        dot.render(file_path)
+        dot.render(file_path, cleanup=True)
 
         if show:
             subprocess.run(["wslview", file_path+".pdf"])
@@ -154,6 +172,73 @@ class AVLTree:
         
         return node
         
+    def delete(self, value):
+        self.root = self.__delete_at(value, self.root)
+
+    def __delete_at(self, value, node):
+        
+        if node == None:
+            return node
+        
+        # if the current node is not the one to be deleted, pass the call down the chain
+        if value < node.value:
+            node.left_child = self.__delete_at(value, node.left_child)
+
+        elif value > node.value:
+            node.right_child = self.__delete_at(value, node.right_child)
+
+        else:   # kill the node, and deal with its orphans
+            if node.left_child == None:
+                replacement = node.right_child
+                node = None
+                return replacement
+            
+            elif node.right_child == None:
+                replacement = node.left_child
+                node = None
+                return replacement
+            
+            else:   # node has two children, find the successor and move it into place
+                replacement = self.successor(node)
+                node.value = replacement.value
+                node.right_child = self.__delete_at(replacement.value, node.right_child)
+
+        assert node != None, "not sure how this could happen, but we'll see!"
+
+        node.height = 1 + max(self.get_height(node.left_child), self.get_height(node.right_child))
+
+        # rebalance tree, if necessary
+        balance = self.balance_at(node)
+
+        if balance > 1:
+            # left-heavy
+            x = node.left_child
+            
+            if self.balance_at(x) < 0:
+                # do left-right rotation
+                node.left_child = self.left_rotation(x)
+                node = self.right_rotation(node)
+            else:
+                # do right rotation
+                node = self.right_rotation(node)
+        
+        if balance < -1:
+            # right-heavy
+            x = node.right_child
+            
+            if self.balance_at(x) > 0:
+                # do right-left rotation
+                node.right_child = self.right_rotation(x)
+                node = self.left_rotation(node)
+            else:
+                # do left rotation
+                node = self.left_rotation(node)
+
+        balance = self.balance_at(node)
+        assert abs(balance) <= 1, "rebalancing failed!"
+
+        return node
+
     def right_rotation(self, node):
 
         # this will only be called if x exists
@@ -193,20 +278,13 @@ class AVLTree:
         x.height = 1 + max(self.get_height(x.left_child), self.get_height(x.right_child))
         
         return x
-    
-    def delete(self, value):
-        self.__delete_at(value, self.root)
-
-    def __delete_at(self, value, node):
-        # TODO: delete value from tree
-        return
-    
+        
     def search(self, value):
         return self.search_subtree(self, self.root, value)
     
     def search_subtree(self, node, value):
         # TODO: search tree
-        return
+        return None
     
     def min(self):
         return self.subtree_min(self.root)

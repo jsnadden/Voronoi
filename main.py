@@ -8,21 +8,39 @@ import PriorityQueue
 
 start_time = time.time()
 
-trees = 3
-size = 20
+
+
+
+trees = 100
+size = 200
 
 for i in range(trees):
+    print("==============================================")
+    print(f"TREE {i}:")
+    print("----------------------------------------------")
+    
     my_values = range(size)
     my_values = random.sample(my_values, k=size)
 
     a = AVLTree.AVLTree(values=my_values)
-
-    a.generate_plot(show=True)
-
-    #print("==============================================")
-    # print(f"TREE {i}:")
-    # print("----------------------------------------------")
+    
     # a.print()
+    # a.generate_plot(show=(trees == 1))
 
-#print("==============================================")
+    # print("==============================================")
+    # print(f"TREE {i} after deleting node 50:")
+    # print("----------------------------------------------")
+    
+    # a.delete(50)
+    # a.print()
+    # a.generate_plot(show=(trees == 1))
 
+print(time.time() - start_time)
+
+
+
+
+
+# print("==============================================")
+# print(f"RAN FOR {time.time()-start_time} SECONDS")
+# print("==============================================")

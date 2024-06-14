@@ -1,2 +1,8 @@
+# directories
 .venv/
 graphviz_outputs/
+__pychache__/
+
+# filetypes
+*.pyc
+*.pyo
