@@ -12,7 +12,7 @@ class Node:
 
 
 class AVLTree:
-    def __init__(self, value = None, values=[], comparison_fn=lambda x : x):
+    def __init__(self, value = None, values=[], comparison_fn=lambda x,y : x<y):
 
         # the comparison_fn needs to be injective, so that the inorder is well-defined
         self.comparison_fn = comparison_fn
@@ -51,10 +51,10 @@ class AVLTree:
             assert node.height == 1 + max(self.get_height(node.left_child), self.get_height(node.right_child))
             
             if node.right_child != None:
-                assert self.comparison_fn(node.value) < self.comparison_fn(self.subtree_min(node.right_child).value)
+                assert self.comparison_fn(node.value, self.subtree_min(node.right_child).value)
             
             if node.left_child != None:
-                assert self.comparison_fn(node.value) > self.comparison_fn(self.subtree_max(node.left_child).value)
+                assert self.comparison_fn(self.subtree_max(node.left_child).value, node.value)
              
     # returns an inordered list of every node in the tree
     def list_tree(self):
@@ -133,16 +133,14 @@ class AVLTree:
             return node
 
         # find valid location for new node, if not already present
-        compare = self.comparison_fn(value) - self.comparison_fn(node.value)
-
-        if compare < 0:
+        if self.comparison_fn(value, node.value):
             node.left_child = self.__insert_at(value, node.left_child)
             node.left_child.parent = node
 
             if node.height <= node.left_child.height:
                 node.height = node.left_child.height + 1
 
-        if compare > 0:
+        if self.comparison_fn(node.value, value):
             node.right_child = self.__insert_at(value, node.right_child)
             node.right_child.parent = node
 
@@ -192,10 +190,10 @@ class AVLTree:
             return node
         
         # if the current node is not the one to be deleted, pass the call down the chain
-        if self.comparison_fn(value) < self.comparison_fn(node.value):
+        if self.comparison_fn(value, node.value):
             node.left_child = self.__delete_at(value, node.left_child)
 
-        elif self.comparison_fn(value) > self.comparison_fn(node.value):
+        elif self.comparison_fn(node.value, value):
             node.right_child = self.__delete_at(value, node.right_child)
 
         else:   # kill the node, and deal with its orphans
@@ -301,12 +299,10 @@ class AVLTree:
 
         if node == None:
             return None
-        
-        comparison = self.comparison_fn(value) - self.comparison_fn(node.value)
 
-        if comparison < 0:
+        if self.comparison_fn(value, node.value):
             return self.search_subtree(node.left_child, value)
-        elif comparison > 0:
+        elif self.comparison_fn(node.value, value):
             return self.search_subtree(node.right_child, value)
         
         return node
@@ -328,7 +324,7 @@ class AVLTree:
                 return current_node.parent
             current_node = current_node.parent
         
-        return node
+        return None
       
     # find the minimal (inorder) node for a subtree
     def subtree_min(self, node):
@@ -345,7 +341,17 @@ class AVLTree:
     
     # find the predecessor to a given node
     def predecessor(self, node):
-        return # TODO
+        if node.left_child != None:
+            return self.subtree_max(node.left_child)
+                
+        current_node = node
+
+        while current_node.parent != None:
+            if current_node == current_node.parent.right_child:
+                return current_node.parent
+            current_node = current_node.parent
+        
+        return None
     
     # find the maximal (inorder) node for a subtree
     def subtree_max(self, node):
