@@ -8,39 +8,17 @@ import PriorityQueue
 import BeachLine
 
 
+a = BeachLine.Arc([-4,2])
+b = BeachLine.Arc([0,1])
+c = BeachLine.Arc([1,7])
 
-max_arcs = 1000
-sample_size = 1
+print({f"a and b intersect at x={a.Breakpoint(b,0)}"})
+print({f"b and c intersect at x={b.Breakpoint(c,0)}"})
 
-ave_heights = []
-ave_creation_times = []
-
-for num_arcs in range(1,max_arcs, 10):
-	start_time = time.time()
-	out = 0
-	for i in range(sample_size):
-		arcs = []
-
-		for x in range(num_arcs):
-			arcs.append(BeachLine.Arc([x,0]))
-		
-		tree = BeachLine.FortuneTree(arcs)
-		out += tree.GetHeight()
-	
-	ave_creation_times.append((time.time() - start_time) / sample_size)
-	ave_heights.append(out / sample_size)
-
-plt.plot(range(1,max_arcs, 10), ave_heights)
-plt.xlabel('number of nodes')
-plt.ylabel('tree height')
-plt.savefig('fortune_tree_ave_heights.png')
-
-plt.plot(range(1,max_arcs, 10), ave_creation_times)
-plt.xlabel('number of nodes')
-plt.ylabel('tree build time')
-plt.savefig('fortune_tree_ave_build_times.png')
-
-
+tree = BeachLine.BeachLine(b)
+tree.InsertAfter(b,c)
+tree.InsertBefore(b,a)
+tree.PlotEnvelope(0,-5,5,200)
 	
 
 

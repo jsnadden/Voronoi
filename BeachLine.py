@@ -3,6 +3,7 @@ import sys
 import time
 import graphviz
 import subprocess
+from matplotlib import pyplot as plt
 
 DEFAULT = object()
 
@@ -38,9 +39,9 @@ class Arc:
 	# returns a list of all (real, internal) intersection points (in list form [x,y]) between two parabolic arcs
 	def Breakpoint(self, other, directrix):
 		# get the coefficients and form a difference of quadratic functions
-		A = self.coefficents(directrix)[0] - other.coefficents(directrix)[0]
-		B = self.coefficents(directrix)[1] - other.coefficents(directrix)[1]
-		C = self.coefficents(directrix)[2] - other.coefficents(directrix)[2]
+		A = self.Coefficents(directrix)[0] - other.Coefficents(directrix)[0]
+		B = self.Coefficents(directrix)[1] - other.Coefficents(directrix)[1]
+		C = self.Coefficents(directrix)[2] - other.Coefficents(directrix)[2]
 		discriminant = B**2 - 4*A*C
 		x = None
 
@@ -62,22 +63,13 @@ class Arc:
 		if x == None:
 			return None
 
-		y = self.Evaluate(x, directrix)
-		point = [x, y]
-
-		return point
+		return x
 
 
 
 class FortuneTree: # basically a combination of an AVL tree and a doubly-linked list, with parabolic arcs at each node
-	def __init__(self, arcs):
-
-		arc = self.root = arcs.pop(0)
-
-		while len(arcs) > 0:
-			newarc = arcs.pop(0)
-			self.InsertAfter(arc, newarc)
-			arc = newarc
+	def __init__(self, root):
+		self.root = root
 
 	def GetHeight(self, arc=DEFAULT):
 
@@ -385,12 +377,22 @@ class FortuneTree: # basically a combination of an AVL tree and a doubly-linked 
 
 
 class BeachLine(FortuneTree):
-	def __init__(self, first_site):
-		FortuneTree.__init__(self, Arc(first_site))
+	def __init__(self, root):
+		FortuneTree.__init__(self, root)
 
-	def PlotEnvelope(self, sweepline):
-		# TODO plot the following function:
-		# x maps to self.GetArcAbove(x, sweepline).Evaluate(x, sweepline)
+	def PlotEnvelope(self, sweepline, left_limit, right_limit, samples=100):
+		
+		x, y = [], []
+
+		for i in range(samples):
+			xi = left_limit + i * (right_limit - left_limit) / samples
+			yi = self.GetArcAbove(xi, sweepline).Evaluate(xi, sweepline)
+			x.append(xi)
+			y.append(yi)
+		
+		plt.plot(x, y)
+		plt.show()
+
 		return
 
 	def ListBreakpoints(self, sweepline):
@@ -398,14 +400,15 @@ class BeachLine(FortuneTree):
 		points = []
 
 		while arc.next != None:
-			points.append(arc.Breakpoint(arc.next), sweepline)
+			x = arc.Breakpoint(arc.next, sweepline)
+			y = arc.Evaluate(x, sweepline)
+			points.append([x,y])
 			arc = arc.next
 
 		return points
 
 	# find the arc on the beachfront immediately above a given point in the plane
 	def GetArcAbove(self, x, sweepline):
-
 		arc = self.root;
 		found = False;
 
@@ -414,14 +417,14 @@ class BeachLine(FortuneTree):
 			right = math.inf
 
 			if arc.previous != None:
-				left = arc.previous.Breakpoint(arc, sweepline)[0]
+				left = arc.previous.Breakpoint(arc, sweepline)
 
 			if arc.next != None:
-				right = arc.Breakpoint(arc.next, sweepline)[1]
+				right = arc.Breakpoint(arc.next, sweepline)
 
 			if x < left:
 				arc = arc.left
-			elif x > right:
+			elif x >= right:
 				arc = arc.right
 			else:
 				found = True
