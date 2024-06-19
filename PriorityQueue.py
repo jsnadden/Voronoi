@@ -1,9 +1,10 @@
 
-
 class PriorityQueue:
-    def __init__(self, init_list=[], sort_fn=False):
+    def __init__(self, init_list=[], sort_fn=None):
+        
         self.queue = init_list
-        if sort_fn:
+
+        if sort_fn != None:
             self.queue.sort(key=sort_fn)
     
     def is_empty(self):
@@ -14,3 +15,6 @@ class PriorityQueue:
     
     def insert(self, element, priority=0):
         self.queue.insert(priority, element)
+
+
+
