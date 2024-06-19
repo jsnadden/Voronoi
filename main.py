@@ -7,25 +7,55 @@ import AVLTree
 import PriorityQueue
 import BeachLine
 
-start_time = time.time()
 
-arc = BeachLine.Arc([0,0])
-tree = BeachLine.FortuneTree(arc)
 
-for i in range(1,11):
-	newarc = BeachLine.Arc([i,0])
-	tree.InsertAfter(arc, newarc)
-	tree.PlotTree(filename=f"adding arc {i}")
-	arc = newarc
+max_arcs = 1000
+sample_size = 1
 
-arc = tree.Min()
+ave_heights = []
+ave_creation_times = []
 
-while arc.next != None:
-	next_arc = arc.next
-	tree.Delete(arc)
-	tree.PlotTree(filename=f"deleted arc {arc.focus[0]}")
-	arc = next_arc
+for num_arcs in range(1,max_arcs, 10):
+	start_time = time.time()
+	out = 0
+	for i in range(sample_size):
+		arcs = []
 
+		for x in range(num_arcs):
+			arcs.append(BeachLine.Arc([x,0]))
+		
+		tree = BeachLine.FortuneTree(arcs)
+		out += tree.GetHeight()
+	
+	ave_creation_times.append((time.time() - start_time) / sample_size)
+	ave_heights.append(out / sample_size)
+
+plt.plot(range(1,max_arcs, 10), ave_heights)
+plt.xlabel('number of nodes')
+plt.ylabel('tree height')
+plt.savefig('fortune_tree_ave_heights.png')
+
+plt.plot(range(1,max_arcs, 10), ave_creation_times)
+plt.xlabel('number of nodes')
+plt.ylabel('tree build time')
+plt.savefig('fortune_tree_ave_build_times.png')
+
+
+	
+
+
+
+# arc = tree.Min()
+
+# tree.PlotTree(height=True)
+
+# while arc.next != None:
+# 	next_arc = arc.next.next
+# 	tree.Delete(arc)
+# 	arc = next_arc
+# tree.Delete(arc)
+
+# tree.PlotTree(height=True)
 
 # trees = 1
 # size = 200

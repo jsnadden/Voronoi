@@ -36,44 +36,53 @@ class Arc:
 		return ((x - self.focus[0])**2 / (2 * (self.focus[1] - directrix))) + ((self.focus[1] + directrix) / 2)
 
 	# returns a list of all (real, internal) intersection points (in list form [x,y]) between two parabolic arcs
-	def Intersections(self, other, directrix):
+	def Breakpoint(self, other, directrix):
 		# get the coefficients and form a difference of quadratic functions
 		A = self.coefficents(directrix)[0] - other.coefficents(directrix)[0]
 		B = self.coefficents(directrix)[1] - other.coefficents(directrix)[1]
 		C = self.coefficents(directrix)[2] - other.coefficents(directrix)[2]
 		discriminant = B**2 - 4*A*C
-		out = []
+		x = None
 
 		if A == 0:
-			if B==0:
-				if C==0:
-					print("Infinitely many intersections: parabolae overlap on an interval.", file=sys.stderr)
-					return None
+			if B == 0: # the parabolae are vertical translations of one another, or are equal
+				assert C, "Intersected a parabola with itself"
+				x = None
 
 			else: # the parabolae are horizontal translations of one another, and have a single intersection
-				out.append(-C/B)
+				x = -C/B
 
 		else:
 			if discriminant == 0: # double root
-				intersection_x = -B / (2 * A)
-				out.append(intersection_x)
+				x = -B / (2 * A)
 
-			elif discriminant > 0: # distinct real roots
-				intersection_x1 = (-B + math.sqrt(discriminant))/(2*A)
-				intersection_x2 = (-B - math.sqrt(discriminant))/(2*A)
-				out.append(intersection_x1)
-				out.append(intersection_x2)
+			elif discriminant > 0: # distinct real roots, the correct one will be the + option
+				x = (-B + math.sqrt(discriminant))/(2*A)
 
-		return out
+		if x == None:
+			return None
+
+		y = self.Evaluate(x, directrix)
+		point = [x, y]
+
+		return point
 
 
 
 class FortuneTree: # basically a combination of an AVL tree and a doubly-linked list, with parabolic arcs at each node
-	def __init__(self, arc):
+	def __init__(self, arcs):
 
-		self.root = arc
+		arc = self.root = arcs.pop(0)
 
-	def GetHeight(self, arc):
+		while len(arcs) > 0:
+			newarc = arcs.pop(0)
+			self.InsertAfter(arc, newarc)
+			arc = newarc
+
+	def GetHeight(self, arc=DEFAULT):
+
+		if arc == DEFAULT:
+			arc = self.root
 
 		if arc == None:
 			return -1
@@ -181,7 +190,7 @@ class FortuneTree: # basically a combination of an AVL tree and a doubly-linked 
 		while abs(balance) > 1:
 			arc = self.Rebalance(arc, balance)
 			balance = self.GetBalance(arc)
-		
+
 		arc.height = self.RecalculateHeight(arc)
 
 		return arc
@@ -287,12 +296,12 @@ class FortuneTree: # basically a combination of an AVL tree and a doubly-linked 
 	def Replace(self, arc, replacement):
 
 		if arc.parent == None:
-			self.root = replacement	
+			self.root = replacement
 		elif arc == arc.parent.left:
-			arc.parent.left = replacement	
+			arc.parent.left = replacement
 		else:
 			arc.parent.right = replacement
-		
+
 		if replacement != None:
 			replacement.parent = arc.parent
 
@@ -346,9 +355,14 @@ class FortuneTree: # basically a combination of an AVL tree and a doubly-linked 
 
 		return out
 
+	def FormatLabel(self, arc, height=False):
+		label = f"({arc.focus[0]},{arc.focus[1]})"
+		if height: label += f", H={arc.height}"
+		return label
+
 	# generates a pdf file containing a plot of the tree, via the graphviz package
-	def PlotTree(self, filename=DEFAULT):
-		
+	def PlotTree(self, filename=DEFAULT, height=False):
+
 		if filename == DEFAULT:
 			filename = time.time()
 
@@ -356,28 +370,68 @@ class FortuneTree: # basically a combination of an AVL tree and a doubly-linked 
 		dot = graphviz.Digraph()
 
 		for arc in arcs:
-			dot.node(f"{arc.focus[0]},{arc.focus[1]}")
+			dot.node(self.FormatLabel(arc, height))
 
 			if arc.left != None:
-				dot.edge(f"{arc.focus[0]},{arc.focus[1]}",
-						 f"{arc.left.focus[0]},{arc.left.focus[1]}")
+				dot.edge(self.FormatLabel(arc, height),
+						 self.FormatLabel(arc.left, height))
 
 			if arc.right != None:
-				dot.edge(f"{arc.focus[0]},{arc.focus[1]}",
-						 f"{arc.right.focus[0]},{arc.right.focus[1]}")
+				dot.edge(self.FormatLabel(arc, height),
+						 self.FormatLabel(arc.right, height))
 
 		file_path = f"graphviz_outputs/fortune_tree_{filename}"
 		dot.render(file_path, cleanup=True)
 
 
 class BeachLine(FortuneTree):
-	def __init__(self, site):
-		FortuneTree.__init__(self, Arc(site))
+	def __init__(self, first_site):
+		FortuneTree.__init__(self, Arc(first_site))
 
-	def GetBreakpoints(self, sweepline):
-		breakpoints = []
+	def PlotEnvelope(self, sweepline):
+		# TODO plot the following function:
+		# x maps to self.GetArcAbove(x, sweepline).Evaluate(x, sweepline)
+		return
+
+	def ListBreakpoints(self, sweepline):
+		arc = self.Min()
+		points = []
+
+		while arc.next != None:
+			points.append(arc.Breakpoint(arc.next), sweepline)
+			arc = arc.next
+
+		return points
+
+	# find the arc on the beachfront immediately above a given point in the plane
+	def GetArcAbove(self, x, sweepline):
+
+		arc = self.root;
+		found = False;
+
+		while not found:
+			left = -math.inf
+			right = math.inf
+
+			if arc.previous != None:
+				left = arc.previous.Breakpoint(arc, sweepline)[0]
+
+			if arc.next != None:
+				right = arc.Breakpoint(arc.next, sweepline)[1]
+
+			if x < left:
+				arc = arc.left
+			elif x > right:
+				arc = arc.right
+			else:
+				found = True
+		
+		return arc
+
+	def HandleSiteEvent(self, event):
 		# TODO: figure this shit out
-		return breakpoints
+		return
+
 
 
 
