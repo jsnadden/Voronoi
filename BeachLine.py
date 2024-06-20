@@ -1,33 +1,26 @@
 import math
+import copy
+import time
 from matplotlib import pyplot as plt
 
-import FortuneTree
+from FortuneTree import Node, FortuneTree
+from Point import Point
 
 
-# 2d point, pretty self-explanatory
-class Point:
-	def __init__(self, x, y):
-		self.x = x
-		self.y = y
 
 
 # encodes, and provides an interface for, parabolics arcs with fixed focus, and a variable (horizontal) directrix
-class Arc:
+class Arc(Node):
 	def __init__(self, focus):
+		super().__init__()
 
 		# geometric data
 		self.focus = focus
-		self.event = None
 		self.left_halfedge = None
 		self.right_halfedge = None
 
-		# data for tree structure
-		self.parent = None
-		self.left = None
-		self.right = None
-		self.previous = None
-		self.next = None
-		self.height = 0
+		# auxilliary data
+		self.label = 0
 
 	# produce a list of the coefficients for the associated quadratic function, given the current directrix y-value
 	def Coefficents(self, directrix):
@@ -71,9 +64,66 @@ class Arc:
 
 
 # augments the above tree structure with application-specific methods
-class BeachLine(FortuneTree.FortuneTree):
+class BeachLine(FortuneTree):
 	def __init__(self, root):
-		super().__init__(self, root)
+		super().__init__(root)
+		
+		if root == None:
+			self.arc_count = 0
+		else:
+			self.arc_count = 1
+			root.label = 1
+
+# find the arc on the beachfront immediately above a given point in the plane
+	def GetArcAbove(self, x, sweepline):
+		arc = self.root;
+		found = False;
+
+		while not found:
+			left = -math.inf
+			right = math.inf
+
+			if arc.previous != None:
+				left = arc.previous.Breakpoint(arc, sweepline)
+
+			if arc.next != None:
+				right = arc.Breakpoint(arc.next, sweepline)
+
+			if x < left:
+				arc = arc.left
+			elif x >= right:
+				arc = arc.right
+			else:
+				found = True
+		
+		return arc
+
+	def AddArc(self, arc):
+
+		left = self.GetArcAbove(arc.focus.x, arc.focus.y)
+		right = copy.deepcopy(left)
+
+		# TODO: initialise each arc's voronoi graph data
+
+		self.InsertAfter(left, arc)
+		arc.label = self.arc_count + 1
+		self.arc_count +=1
+
+		self.InsertAfter(arc, right)
+		right.label = self.arc_count + 1
+		self.arc_count +=1
+
+	def ListBreakpoints(self, sweepline):
+		arc = self.Min()
+		points = []
+
+		while arc.next != None:
+			x = arc.Breakpoint(arc.next, sweepline)
+			y = arc.Evaluate(x, sweepline)
+			points.append(Point(x,y))
+			arc = arc.next
+
+		return points
 
 	def PlotEnvelope(self, sweepline, left_limit, right_limit, samples=100, show=True, save=False, sites=False):
 		
@@ -100,54 +150,13 @@ class BeachLine(FortuneTree.FortuneTree):
 
 		return
 
-	def ListBreakpoints(self, sweepline):
-		arc = self.Min()
-		points = []
+	def FormatArcLabel(self, arc):
+		node_label = f"Arc {arc.label} ({arc.focus.x},{arc.focus.y})"
+		return node_label
+	
+	def PlotTree(self, filename=time.time()):
+		super().PlotTree(f"beachline_{filename}", self.FormatArcLabel)
 
-		while arc.next != None:
-			x = arc.Breakpoint(arc.next, sweepline)
-			y = arc.Evaluate(x, sweepline)
-			points.append(Point(x,y))
-			arc = arc.next
+	
 
-		return points
-
-	# find the arc on the beachfront immediately above a given point in the plane
-	def GetArcAbove(self, x, sweepline):
-		arc = self.root;
-		found = False;
-
-		while not found:
-			left = -math.inf
-			right = math.inf
-
-			if arc.previous != None:
-				left = arc.previous.Breakpoint(arc, sweepline)
-
-			if arc.next != None:
-				right = arc.Breakpoint(arc.next, sweepline)
-
-			if x < left:
-				arc = arc.left
-			elif x >= right:
-				arc = arc.right
-			else:
-				found = True
-		
-		return arc
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+	

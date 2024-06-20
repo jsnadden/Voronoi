@@ -6,7 +6,7 @@ import Graphs
 # TODO: think carefully about chain of "imports" i.e. which structures know about each other
 class FortunesAlgorithm:
 	def __init__(self, sites):
-		sites.sort(lambda point : point.y)
+		sites.sort(key=lambda point : point.y)
 		events = [Events.SiteEvent(site) for site in sites]
 		starting_event = events.pop()
 

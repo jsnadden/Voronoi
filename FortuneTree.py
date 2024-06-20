@@ -3,6 +3,16 @@ import graphviz
 
 DEFAULT = object()
 
+class Node:
+	def __init__(self, data=None):
+		self.data = data
+		self.parent = None
+		self.left = None
+		self.right = None
+		self.previous = None
+		self.next = None
+		self.height = 0
+
 # basically a combination of an AVL tree and a doubly-linked list
 class FortuneTree:
 	def __init__(self, root):
@@ -284,30 +294,25 @@ class FortuneTree:
 
 		return nodes
 
-	def FormatLabel(self, node, height=False):
-		label = f"(F={node.focus.x},{node.focus.y})"
-		if height: label += f", H={node.height}"
-		return label
-
 	# generates a pdf file containing a plot of the tree, via the graphviz package
-	def PlotTree(self, filename=DEFAULT, height=False):
+	def PlotTree(self, filename=DEFAULT, label_fn=lambda node : f"{node.data}"):
 
 		if filename == DEFAULT:
-			filename = time.time()
+			filename = f"fortune_tree_{time.time()}"
 
 		nodes = self.ListNodes()
 		dot = graphviz.Digraph()
 
 		for node in nodes:
-			dot.node(self.FormatLabel(node, height))
+			dot.node(label_fn(node))
 
 			if node.left != None:
-				dot.edge(self.FormatLabel(node, height),
-						 self.FormatLabel(node.left, height))
+				dot.edge(label_fn(node),
+						 label_fn(node.left))
 
 			if node.right != None:
-				dot.edge(self.FormatLabel(node, height),
-						 self.FormatLabel(node.right, height))
+				dot.edge(label_fn(node),
+						 label_fn(node.right))
 
-		file_path = f"graphviz_outputs/fortune_tree_{filename}"
+		file_path = f"graphviz_outputs/{filename}"
 		dot.render(file_path, cleanup=True)
